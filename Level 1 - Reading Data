@@ -1,0 +1,121 @@
+Level 1 — Reading Data
+You have two CSV files. How will you read them?
+How will you read a CSV with headers?
+How will you read a CSV without headers?
+How will you specify the schema while reading a CSV?
+How will you read multiple CSV files from the same folder?
+How will you read only files matching a particular pattern?
+How will you read a Parquet file?
+How will you read multiple Parquet files?
+How will you read JSON data?
+What happens if you use inferSchema=True?
+How would you handle a CSV where the columns have incorrect data types?
+How would you read a large CSV efficiently?
+
+
+Level 1 — Reading Data Solutions
+
+# You have two CSV files. How will you read them? 
+df = spark.read.csv("/Volumes/workspace/default/volume_data/*.csv", header = True, inferSchema = True)
+# -- use wildcard path by using * to read multiple csv files with same schema
+
+# For 2 DFs
+df1 = spark.read.csv("/Volumes/workspace/default/volume_data/*.csv", header = True, inferSchema = True)
+df2 = spark.read.csv("/Volumes/workspace/default/volume_data/*.csv", header = True, inferSchema = True)
+df1.union(df2)
+
+# How will you read a CSV with headers? 
+df = spark.read.csv("/Volumes/workspace/default/volume_data/*.csv", header = True, inferSchema = True)
+
+# How will you read a CSV without headers? 
+df = spark.read.csv("/Volumes/workspace/default/volume_data/*.csv", header = False, inferSchema = True)
+
+# Spark will generate column names such as: 
+# _c0 
+# _c1 
+# _c2 
+
+# If you know the column names, you can rename them later. 
+df = df.toDF("emp_id", "name", "salary") 
+
+# How will you specify the schema while reading a CSV? 
+schema = StructType([
+    StructField("emp_id",IntegerType(),True),
+    StructField("name",StringType(),True),
+    StructField("salary",DoubleType(),True)
+])
+
+df = spark.read.csv("/Volumes/workspace/default/volume_data/*.csv", header = False, schema = schema) 
+
+# How will you read multiple CSV files from the same folder? 
+    # --above
+
+    How will you read only files matching a particular pattern?
+    # sales_2025.csv
+    # sales_2026.csv
+
+df = spark.read.csv("/path/sales_*.csv", header = False, inferSchema = True) 
+
+How will you read a Parquet file? 
+df = spark.read.parquet("path/file.parquet")
+df = spark.read.parquet("path/file.parquet") 
+# Unlike CSV, you don't need: 
+# header=True 
+# because Parquet already stores schema information. 
+
+How will you read multiple Parquet files? 
+df = spark.read.parquet("path/*.parquet")
+# Or simply point Spark to a directory containing Parquet files: 
+df = spark.read.parquet("path/parquet_folder/") 
+# Spark can read the files in that dataset as a DataFrame. 
+
+How will you read JSON data? 
+df = spark.read.json("path/file.json") 
+# For multiple JSON files: 
+df = spark.read.json("path/*.json") 
+# If you want Spark to infer the schema: 
+df = spark.read.json( 
+"path/*.json" 
+) 
+# Spark's JSON reader handles schema inference by default. 
+
+What happens if you use inferSchema=True? 
+# Spark determines the appropriate datatypes on the basis of the column values
+# For example: 
+
+# emp_id → integer 
+# name → string 
+# salary → double 
+
+# Without schema inference, CSV columns are generally read as strings. 
+
+# Important interview point 
+# inferSchema=True is convenient, but for production pipelines, an explicit schema is often preferable because it gives you predictable types and avoids relying on inference. 
+
+How would you handle a CSV where the columns have incorrect data types?
+# Then invalid values such as "ABC" for salary can become NULL rather than being treated as a valid numeric value. 
+# In a real pipeline, you would usually also have a strategy for quarantining/logging bad records rather than silently losing them.  
+
+How would you read a large CSV efficiently? 
+"I would avoid unnecessary schema inference for a large production file and provide an explicit schema. 
+I would also make sure the data is in a distributed storage system and choose an appropriate file format such as Parquet for downstream processing." 
+
+For example: 
+
+df = spark.read.csv( 
+"gs://bucket/data/*.csv", 
+header=True, 
+schema=schema 
+) 
+
+Then, after processing, write it as Parquet: 
+
+df.write.parquet("gs://bucket/output/") 
+
+Why Parquet? 
+
+Because Parquet is: 
+columnar  
+compressed  
+schema-aware  
+generally much more efficient for analytical Spark workloads than repeatedly reading raw CSV.  

@@ -119,3 +119,20 @@ columnar
 compressed  
 schema-aware  
 generally much more efficient for analytical Spark workloads than repeatedly reading raw CSV.  
+
+
+
+# CSV
+df = spark.read.csv("file.csv", header=True, inferSchema=True)
+
+# Multiple CSVs
+df = spark.read.csv("path/*.csv", header=True, inferSchema=True)
+
+# Parquet
+df = spark.read.parquet("file.parquet")
+
+# JSON
+df = spark.read.json("file.json")
+
+# Explicit schema
+df = spark.read.csv("file.csv", header=True, schema=schema)
